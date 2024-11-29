@@ -163,9 +163,12 @@ impl GeneticAlgorithm {
 
         let max_fitness = log["fitness"]["max"].as_object().unwrap();
         let index = max_fitness["index"].as_u64().unwrap() as usize;
-        let target_path = format!(".cache/best/{}.png", self.epoch);
-        let source_path = format!(".cache/frames/{}.png", index);
-        std::fs::copy(source_path, target_path).unwrap();
+
+        if self.epoch % (self.epochs / 100) == 0 {
+            let target_path = format!(".cache/best/{}.png", self.epoch);
+            let source_path = format!(".cache/frames/{}.png", index);
+            std::fs::copy(source_path, target_path).unwrap();
+        }
 
         if (max_fitness["value"].as_f64().unwrap() - 1.0).abs() < f64::EPSILON
             || self.epochs == self.epoch + 1

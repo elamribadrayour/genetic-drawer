@@ -2,6 +2,10 @@
 
 Genetic Drawer is a Rust-based project inspired by EvoLISA, designed to recreate images using a genetic algorithm. The project evolves a population of polygons to approximate a target image, such as the Mona Lisa, through iterative processes of selection, crossover, and mutation.
 
+<div align="center">
+  <img src="assets/result.gif" alt="best" width="200"/>
+</div>
+
 ## Table of Contents
 
 - [Introduction](#introduction)
