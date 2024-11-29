@@ -35,7 +35,7 @@ impl Individual {
     }
 
     pub fn path(&self) -> String {
-        format!("./.cache/frame-{}.png", self.id)
+        format!("./.cache/frames/{}.png", self.id)
     }
 
     pub fn draw(&self, dimensions: &(u32, u32)) {

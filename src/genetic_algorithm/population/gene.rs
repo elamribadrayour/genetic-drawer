@@ -1,12 +1,13 @@
 use image::{Rgba, RgbaImage};
 use imageproc::drawing;
-use imageproc::point::Point;
 use rand::{Rng, RngCore};
+
+use crate::genetic_algorithm::Point;
 
 #[derive(Clone)]
 pub struct Gene {
-    pub points: Vec<Point<f32>>,
-    pub color: [f32; 4],
+    pub values: Vec<Point>,
+    pub color: [f64; 4],
 }
 
 impl Gene {
@@ -16,8 +17,11 @@ impl Gene {
         // The next 3 elements represent the color of the polygon (RGB).
         // The last element represents the alpha (transparency) value.
         Self {
-            points: (0..polygon_size)
-                .map(|_| Point::new(rng.gen_range(0.0..=1.0), rng.gen_range(0.0..=1.0)))
+            values: (0..polygon_size)
+                .map(|_| Point {
+                    x: rng.gen_range(0.0..=1.0),
+                    y: rng.gen_range(0.0..=1.0),
+                })
                 .collect(),
             color: [rng.gen_range(0.0..=1.0); 4],
         }
@@ -25,46 +29,42 @@ impl Gene {
 
     pub fn empty(polygon_size: usize) -> Self {
         Self {
-            points: vec![Point::new(0.0, 0.0); polygon_size],
+            values: vec![Point { x: 0.0, y: 0.0 }; polygon_size],
             color: [0.0; 4],
         }
     }
 
-    pub fn set_color(&mut self, mult: f32, i: usize) {
-        let new_color = mult * self.color[i];
-        if new_color < 0.0 {
-            self.color[i] = 0.0;
-        } else if new_color > 1.0 {
-            self.color[i] = 1.0;
-        } else {
-            self.color[i] = new_color;
-        }
+    pub fn set_color(&mut self, delta: &[f64]) {
+        (0..4).for_each(|i| {
+            self.color[i] += delta[i];
+            if self.color[i] < f64::EPSILON {
+                self.color[i] = 0.0;
+            } else if (self.color[i] - 1.0).abs() < f64::EPSILON {
+                self.color[i] = 1.0;
+            }
+        });
     }
 
-    pub fn set_point(&mut self, mult: (f32, f32), i: usize) {
-        let new_point = Point::new(mult.0 * self.points[i].x, mult.1 * self.points[i].y);
+    pub fn set_point(&mut self, delta: (f64, f64), i: usize) {
+        let new_point = Point {
+            x: self.values[i].x + delta.0,
+            y: self.values[i].y + delta.1,
+        };
         if new_point.x < 0.0 {
-            self.points[i].x = 0.0;
+            self.values[i].x = 0.0;
         } else if new_point.x > 1.0 {
-            self.points[i].x = 1.0;
+            self.values[i].x = 1.0;
         } else {
-            self.points[i].x = new_point.x;
+            self.values[i].x = new_point.x;
         }
 
         if new_point.y < 0.0 {
-            self.points[i].y = 0.0;
+            self.values[i].y = 0.0;
         } else if new_point.y > 1.0 {
-            self.points[i].y = 1.0;
+            self.values[i].y = 1.0;
         } else {
-            self.points[i].y = new_point.y;
+            self.values[i].y = new_point.y;
         }
-    }
-
-    pub fn points(&self, width: u32, height: u32) -> Vec<Point<i32>> {
-        self.points
-            .iter()
-            .map(|p| Point::new((p.x * width as f32) as i32, (p.y * height as f32) as i32))
-            .collect()
     }
 
     pub fn color(&self) -> Rgba<u8> {
@@ -78,10 +78,23 @@ impl Gene {
 
     pub fn draw(&self, image: &mut RgbaImage) {
         let color = self.color();
-        let points: Vec<Point<i32>> = self.points(image.width(), image.height());
+        let points: Vec<imageproc::point::Point<i32>> = self
+            .values
+            .iter()
+            .map(|p| {
+                imageproc::point::Point::new(
+                    (p.x * image.width() as f64) as i32,
+                    (p.y * image.height() as f64) as i32,
+                )
+            })
+            .collect();
         if points.first() == points.last() {
             return;
         }
         drawing::draw_polygon_mut(image, &points, color);
+    }
+
+    pub fn len(&self) -> usize {
+        self.values.len()
     }
 }

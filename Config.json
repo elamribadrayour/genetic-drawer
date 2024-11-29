@@ -4,12 +4,13 @@
     "crossover": "uniform",
     "selection": "tournament",
     "image_path": "assets/images/mona-lisa.jpg",
-    "nb_genes": 2000,
-    "polygon_size": 3,
-    "mutation_rate": 0.3,
-    "crossover_rate": 0.5,
-    "selection_rate": 0.5,
-    "tournament_rate": 0.5,
     "epochs": 10000,
-    "population_size": 5
+    "nb_polygons": 100,
+    "polygon_size": 10,
+    "mutation_rate": 0.3,
+    "crossover_rate": 0.7,
+    "selection_rate": 0.9,
+    "population_size": 10,
+    "tournament_rate": 0.5,
+    "log_path": ".cache/log.jsonl"
 }

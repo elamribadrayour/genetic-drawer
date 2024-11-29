@@ -1,13 +1,15 @@
 use crate::genetic_algorithm::{
-    Config, Crossover, Fitness, GaussianMutation, Mae, Mse, Mutation, Population, Rmse, Selection,
-    TournamentSelection, UniformCrossover,
+    statistics, Config, Crossover, Fitness, GaussianMutation, Mae, Mse, Mutation, Population, Rmse,
+    Selection, TournamentSelection, UniformCrossover,
 };
 
-use std::time::Instant;
+use std::fs::File;
+use std::io::{BufWriter, Write};
 
 use image::RgbaImage;
 use rand::{thread_rng, RngCore};
 use rayon::prelude::*;
+use serde_json::json;
 
 pub struct GeneticAlgorithm {
     pub epoch: usize,
@@ -19,10 +21,11 @@ pub struct GeneticAlgorithm {
     pub mutation: Box<dyn Mutation>,
     pub crossover: Box<dyn Crossover>,
     pub selection: Box<dyn Selection>,
-    pub mutation_rate: f32,
-    pub crossover_rate: f32,
-    pub selection_rate: f32,
+    pub mutation_rate: f64,
+    pub crossover_rate: f64,
+    pub selection_rate: f64,
     pub population_size: usize,
+    pub logger: BufWriter<File>,
 }
 
 impl GeneticAlgorithm {
@@ -32,7 +35,7 @@ impl GeneticAlgorithm {
         let population = Population::new(
             &mut rng,
             config.population_size,
-            config.nb_genes,
+            config.nb_polygons,
             config.polygon_size,
         );
         let source = image::open(config.image_path).unwrap().to_rgba8();
@@ -47,7 +50,7 @@ impl GeneticAlgorithm {
         let mutation = match config.mutation.as_str() {
             "gaussian" => Box::new(GaussianMutation {
                 mu: 0.0,
-                sigma: 1.0,
+                sigma: 0.05,
             }) as Box<dyn Mutation>,
             _ => panic!("Invalid mutation function"),
         };
@@ -64,7 +67,11 @@ impl GeneticAlgorithm {
             _ => panic!("Invalid selection function"),
         };
 
-        std::fs::create_dir_all(".cache").unwrap();
+        std::fs::create_dir_all(".cache/frames").unwrap();
+        std::fs::create_dir_all(".cache/best").unwrap();
+
+        let log_file = File::create(config.log_path).unwrap();
+        let logger = BufWriter::new(log_file);
 
         GeneticAlgorithm {
             epoch: iter,
@@ -80,6 +87,7 @@ impl GeneticAlgorithm {
             mutation_rate: config.mutation_rate,
             selection_rate: config.selection_rate,
             population_size: config.population_size,
+            logger,
         }
     }
 
@@ -96,14 +104,14 @@ impl GeneticAlgorithm {
             .collect()
     }
 
-    pub fn evaluate(&self, images: &[RgbaImage]) -> Vec<f32> {
+    pub fn evaluate(&self, images: &[RgbaImage]) -> Vec<f64> {
         images
             .iter()
             .map(|image| self.fitness.calculate(&self.source, image))
             .collect()
     }
 
-    pub fn select(&mut self, fitnesses: &[f32]) {
+    pub fn select(&mut self, fitnesses: &[f64]) {
         self.selection.select(
             &mut *self.rng,
             &self.population,
@@ -121,60 +129,55 @@ impl GeneticAlgorithm {
         );
     }
 
-    pub fn mutation(&mut self) {
+    pub fn mutation(&mut self) -> usize {
         self.mutation
-            .mutate(&mut *self.rng, &mut self.population, self.mutation_rate);
+            .mutate(&mut *self.rng, &mut self.population, self.mutation_rate)
     }
 
     pub fn update(&mut self) {
-        let start = Instant::now();
         self.draw();
-        let draw_time = start.elapsed();
-
-        // Get generate image
-        let start = Instant::now();
         let images = self.read();
-        let get_images_time = start.elapsed();
-
-        // Calculate fitness of the generated images using the fitness function
-        let start = Instant::now();
         let fitnesses = self.evaluate(&images);
-        let fitness_time = start.elapsed();
-
-        // Time each step and log at the end
         self.select(&fitnesses);
-        let selection_time = start.elapsed();
-
-        let start = Instant::now();
         self.crossover();
-        let crossover_time = start.elapsed();
+        let mutated = self.mutation();
 
-        let start = Instant::now();
-        self.mutation();
-        let mutation_time = start.elapsed();
+        let log = json!({
+            "epoch": self.epoch,
+            "mutated": mutated,
+            "fitness": statistics::Fitness::get(&fitnesses),
+            "image": statistics::Image::get(self.population_size),
+        });
 
-        // Update iteration
-        self.epoch += 1;
-
-        let fitness = fitnesses
-            .iter()
-            .max_by(|a, b| a.partial_cmp(b).unwrap())
+        self.logger
+            .write_all((log.to_string() + "\n").as_bytes())
             .unwrap();
 
-        if self.epoch % 1000 == 0 {
+        if self.epoch % (self.epochs / 10) == 0 {
             println!(
-                "iteration: {}\tsize: {}\tfitness: {}\tdraw: {:?}s\tget_images: {:?}s\tfitness: {:?}s\tselection: {:?}s\tcrossover: {:?}s\tmutation: {:?}s",
-            self.epoch,
-            self.population.len(),
-            fitness,
-            draw_time.as_secs_f32(),
-            get_images_time.as_secs_f32(),
-            fitness_time.as_secs_f32(),
-            selection_time.as_secs_f32(),
-                crossover_time.as_secs_f32(),
-                mutation_time.as_secs_f32()
+                "epoch: {} - fitness: {}",
+                log["epoch"].as_u64().unwrap(),
+                log["fitness"]["max"]["value"].as_f64().unwrap()
             );
         }
+
+        let max_fitness = log["fitness"]["max"].as_object().unwrap();
+        let index = max_fitness["index"].as_u64().unwrap() as usize;
+        let target_path = format!(".cache/best/{}.png", self.epoch);
+        let source_path = format!(".cache/frames/{}.png", index);
+        std::fs::copy(source_path, target_path).unwrap();
+
+        if (max_fitness["value"].as_f64().unwrap() - 1.0).abs() < f64::EPSILON
+            || self.epochs == self.epoch + 1
+        {
+            let target_path = ".cache/result.png".to_string();
+            let source_path = format!(".cache/frames/{}.png", index);
+            std::fs::copy(source_path, target_path).unwrap();
+            self.logger.flush().unwrap();
+            return;
+        }
+
+        self.epoch += 1;
     }
 
     pub fn run(&mut self) {

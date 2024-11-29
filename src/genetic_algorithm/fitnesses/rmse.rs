@@ -5,7 +5,7 @@ use image::RgbaImage;
 pub struct Rmse;
 
 impl Fitness for Rmse {
-    fn calculate(&self, source: &RgbaImage, result: &RgbaImage) -> f32 {
+    fn calculate(&self, source: &RgbaImage, result: &RgbaImage) -> f64 {
         let mse = Mse.calculate(source, result);
         mse.sqrt()
     }

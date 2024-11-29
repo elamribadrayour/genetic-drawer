@@ -7,7 +7,7 @@ pub trait Selection {
         &self,
         rng: &mut dyn RngCore,
         population: &Population,
-        fitnesses: &[f32],
-        selection_rate: f32,
+        fitnesses: &[f64],
+        selection_rate: f64,
     ) -> Population;
 }

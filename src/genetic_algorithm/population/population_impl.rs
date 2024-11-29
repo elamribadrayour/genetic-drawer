@@ -8,10 +8,15 @@ pub struct Population {
 }
 
 impl Population {
-    pub fn new(rng: &mut dyn RngCore, size: usize, nb_genes: usize, polygon_size: usize) -> Self {
+    pub fn new(
+        rng: &mut dyn RngCore,
+        size: usize,
+        nb_polygons: usize,
+        polygon_size: usize,
+    ) -> Self {
         Self {
             individuals: (0..size)
-                .map(|i| Individual::new(rng, i, nb_genes, polygon_size))
+                .map(|i| Individual::new(rng, i, nb_polygons, polygon_size))
                 .collect(),
         }
     }

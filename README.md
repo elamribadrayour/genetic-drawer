@@ -52,7 +52,7 @@ The behavior of the genetic algorithm can be customized using the `Config.json` 
 {
     "image_path": "assets/images/mona-lisa.jpg",
     "population_size": 100,
-    "nb_genes": 50,
+    "nb_polygons": 50,
     "fitness": "mse",
     "crossover": "uniform",
     "mutation": "gaussian",

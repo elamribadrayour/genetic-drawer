@@ -7,7 +7,7 @@ pub trait Crossover {
         &self,
         rng: &mut dyn RngCore,
         population: &Population,
-        crossover_rate: f32,
+        crossover_rate: f64,
         population_size: usize,
     ) -> Population;
 }
