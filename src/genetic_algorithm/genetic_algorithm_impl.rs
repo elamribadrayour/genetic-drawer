@@ -1,80 +1,43 @@
-use crate::genetic_algorithm::{
-    statistics, Config, Crossover, Fitness, GaussianMutation, Mae, Mse, Mutation, Population, Rmse,
-    Selection, TournamentSelection, UniformCrossover,
-};
+use crate::genetic_algorithm::*;
 
-use std::fs::File;
-use std::io::{BufWriter, Write};
+use std::collections::HashMap;
+use std::error::Error;
+use std::time::Instant;
 
 use image::RgbaImage;
 use rand::{thread_rng, RngCore};
 use rayon::prelude::*;
-use serde_json::json;
 
 pub struct GeneticAlgorithm {
     pub epoch: usize,
     pub epochs: usize,
     pub source: RgbaImage,
     pub rng: Box<dyn RngCore>,
-    pub population: Population,
-    pub fitness: Box<dyn Fitness>,
-    pub mutation: Box<dyn Mutation>,
-    pub crossover: Box<dyn Crossover>,
-    pub selection: Box<dyn Selection>,
-    pub mutation_rate: f64,
-    pub crossover_rate: f64,
-    pub selection_rate: f64,
+    pub population: population::Population,
+    pub fitness: Box<dyn fitnesses::Fitness>,
+    pub mutation: Box<dyn mutations::Mutation>,
+    pub crossover: Box<dyn crossovers::Crossover>,
+    pub selection: Box<dyn selections::Selection>,
     pub population_size: usize,
-    pub logger: BufWriter<File>,
+    pub logger: statistics::Logger,
 }
 
 impl GeneticAlgorithm {
-    pub fn new(config: Config) -> Self {
-        let iter = 0;
-        let mut rng = thread_rng();
-        let population = Population::new(
-            &mut rng,
-            config.population_size,
-            config.nb_polygons,
-            config.polygon_size,
-        );
-        let source = image::open(config.image_path).unwrap().to_rgba8();
-
-        let fitness = match config.fitness.as_str() {
-            "mse" => Box::new(Mse) as Box<dyn Fitness>,
-            "mae" => Box::new(Mae) as Box<dyn Fitness>,
-            "rmse" => Box::new(Rmse) as Box<dyn Fitness>,
-            _ => panic!("Invalid fitness function"),
-        };
-
-        let mutation = match config.mutation.as_str() {
-            "gaussian" => Box::new(GaussianMutation {
-                mu: 0.0,
-                sigma: 0.05,
-            }) as Box<dyn Mutation>,
-            _ => panic!("Invalid mutation function"),
-        };
-
-        let crossover = match config.crossover.as_str() {
-            "uniform" => Box::new(UniformCrossover) as Box<dyn Crossover>,
-            _ => panic!("Invalid crossover function"),
-        };
-
-        let selection = match config.selection.as_str() {
-            "tournament" => Box::new(TournamentSelection {
-                tournament_rate: config.tournament_rate.unwrap_or(0.5),
-            }),
-            _ => panic!("Invalid selection function"),
-        };
-
+    pub fn new(config: config::Config) -> Result<Self, Box<dyn Error>> {
         std::fs::create_dir_all(".cache/frames").unwrap();
-        std::fs::create_dir_all(".cache/best").unwrap();
 
-        let log_file = File::create(config.log_path).unwrap();
-        let logger = BufWriter::new(log_file);
+        let epoch = 0;
+        let mut rng = thread_rng();
+        let logger = statistics::Logger::new(&config);
+        let fitness = fitnesses::init(&config.fitness);
+        let mutation = mutations::init(&config.mutation);
+        let crossover = crossovers::init(&config.crossover);
+        let selection = selections::init(&config.selection);
+        let population = population::Population::new(&config.population, &mut rng);
+        let source = image::open(&config.image_path).unwrap().to_rgba8();
 
-        GeneticAlgorithm {
-            epoch: iter,
+        Ok(GeneticAlgorithm {
+            epoch,
             epochs: config.epochs,
             source,
             rng: Box::new(rng),
@@ -83,12 +46,9 @@ impl GeneticAlgorithm {
             crossover,
             mutation,
             selection,
-            crossover_rate: config.crossover_rate,
-            mutation_rate: config.mutation_rate,
-            selection_rate: config.selection_rate,
-            population_size: config.population_size,
+            population_size: config.population.population_size,
             logger,
-        }
+        })
     }
 
     pub fn draw(&mut self) {
@@ -112,71 +72,59 @@ impl GeneticAlgorithm {
     }
 
     pub fn select(&mut self, fitnesses: &[f64]) {
-        self.selection.select(
-            &mut *self.rng,
-            &self.population,
-            fitnesses,
-            self.selection_rate,
-        );
+        self.selection
+            .select(&mut *self.rng, &self.population, fitnesses);
     }
 
     pub fn crossover(&mut self) {
-        self.population = self.crossover.crossover(
-            &mut *self.rng,
-            &self.population,
-            self.crossover_rate,
-            self.population_size,
-        );
+        self.population =
+            self.crossover
+                .crossover(&mut *self.rng, &self.population, self.population_size);
     }
 
     pub fn mutation(&mut self) -> usize {
-        self.mutation
-            .mutate(&mut *self.rng, &mut self.population, self.mutation_rate)
+        self.mutation.mutate(&mut *self.rng, &mut self.population)
     }
 
     pub fn update(&mut self) {
-        self.draw();
-        let images = self.read();
-        let fitnesses = self.evaluate(&images);
-        self.select(&fitnesses);
-        self.crossover();
-        let mutated = self.mutation();
+        let mut durations = HashMap::new();
 
-        let log = json!({
-            "epoch": self.epoch,
-            "mutated": mutated,
-            "fitness": statistics::Fitness::get(&fitnesses),
-            "image": statistics::Image::get(self.population_size),
-        });
+        let time = Instant::now();
+        self.draw();
+        durations.insert("draw", time.elapsed());
+
+        let time = Instant::now();
+        let images = self.read();
+        durations.insert("read", time.elapsed());
+
+        let time = Instant::now();
+        let fitnesses = self.evaluate(&images);
+        durations.insert("evaluate", time.elapsed());
+
+        let time = Instant::now();
+        self.select(&fitnesses);
+        durations.insert("select", time.elapsed());
+
+        let time = Instant::now();
+        self.crossover();
+        durations.insert("crossover", time.elapsed());
+
+        let time = Instant::now();
+        let mutated = self.mutation();
+        durations.insert("mutation", time.elapsed());
 
         self.logger
-            .write_all((log.to_string() + "\n").as_bytes())
-            .unwrap();
+            .log(&self.epochs, &self.epoch, &mutated, &fitnesses, &durations);
 
-        if self.epoch % (self.epochs / 10) == 0 {
-            println!(
-                "epoch: {} - fitness: {}",
-                log["epoch"].as_u64().unwrap(),
-                log["fitness"]["max"]["value"].as_f64().unwrap()
-            );
-        }
+        let fitness = statistics::Fitness::get_max(&fitnesses);
+        let value = fitness["value"].as_f64().unwrap();
+        let index = fitness["index"].as_u64().unwrap() as usize;
 
-        let max_fitness = log["fitness"]["max"].as_object().unwrap();
-        let index = max_fitness["index"].as_u64().unwrap() as usize;
-
-        if self.epoch % (self.epochs / 100) == 0 {
-            let target_path = format!(".cache/best/{}.png", self.epoch);
-            let source_path = format!(".cache/frames/{}.png", index);
-            std::fs::copy(source_path, target_path).unwrap();
-        }
-
-        if (max_fitness["value"].as_f64().unwrap() - 1.0).abs() < f64::EPSILON
-            || self.epochs == self.epoch + 1
-        {
+        if (value - 1.0).abs() < f64::EPSILON || self.epochs == self.epoch + 1 {
             let target_path = ".cache/result.png".to_string();
             let source_path = format!(".cache/frames/{}.png", index);
             std::fs::copy(source_path, target_path).unwrap();
-            self.logger.flush().unwrap();
+            self.logger.flush();
             return;
         }
 

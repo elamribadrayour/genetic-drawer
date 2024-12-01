@@ -1,16 +1,26 @@
 {
-    "fitness": "mse",
-    "mutation": "gaussian",
-    "crossover": "uniform",
-    "selection": "tournament",
-    "image_path": "assets/images/mona-lisa.jpg",
+    "fitness": {
+        "name": "mse"
+    },
+    "mutation": {
+        "name": "gaussian",
+        "mu": 0.0,
+        "sigma": 0.01,
+        "rate": 0.3
+    },
+    "crossover": {
+        "name": "uniform",
+        "rate": 0.7
+    },
+    "selection": {
+        "name": "tournament",
+        "rate": 0.5
+    },
+    "population": {
+        "population_size": 10,
+        "individual_size": 100
+    },
     "epochs": 10000,
-    "nb_polygons": 100,
-    "polygon_size": 10,
-    "mutation_rate": 0.3,
-    "crossover_rate": 0.7,
-    "selection_rate": 0.9,
-    "population_size": 10,
-    "tournament_rate": 0.5,
-    "log_path": ".cache/log.jsonl"
+    "log_path": ".cache/log.jsonl",
+    "image_path": "assets/images/painting.png"
 }

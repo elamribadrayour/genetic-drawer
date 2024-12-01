@@ -1,4 +1,4 @@
-use crate::genetic_algorithm::Gene;
+use crate::genetic_algorithm::population::Gene;
 
 use image::RgbaImage;
 
@@ -9,17 +9,17 @@ pub struct Individual {
 }
 
 impl Individual {
-    pub fn new(rng: &mut dyn rand::RngCore, id: usize, size: usize, polygon_size: usize) -> Self {
+    pub fn new(rng: &mut dyn rand::RngCore, id: usize, individual_size: usize) -> Self {
         Self {
             id,
-            genes: (0..size).map(|_| Gene::new(rng, polygon_size)).collect(),
+            genes: (0..individual_size).map(|_| Gene::new(rng)).collect(),
         }
     }
 
-    pub fn empty(id: usize, size: usize, polygon_size: usize) -> Self {
+    pub fn empty(id: usize, individual_size: usize) -> Self {
         Self {
             id,
-            genes: (0..size).map(|_| Gene::empty(polygon_size)).collect(),
+            genes: (0..individual_size).map(|_| Gene::empty()).collect(),
         }
     }
     pub fn len(&self) -> usize {

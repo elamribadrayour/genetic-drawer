@@ -1,4 +1,4 @@
-use crate::genetic_algorithm::Population;
+use crate::genetic_algorithm::population::Population;
 
 use rand::RngCore;
 
@@ -8,6 +8,5 @@ pub trait Selection {
         rng: &mut dyn RngCore,
         population: &Population,
         fitnesses: &[f64],
-        selection_rate: f64,
     ) -> Population;
 }

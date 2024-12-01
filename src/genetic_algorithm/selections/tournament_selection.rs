@@ -1,9 +1,16 @@
-use crate::genetic_algorithm::{Population, Selection};
+use crate::genetic_algorithm::population::Population;
+use crate::genetic_algorithm::selections::{Config, Selection};
 
 use rand::{Rng, RngCore};
 
 pub struct TournamentSelection {
-    pub tournament_rate: f64,
+    pub rate: f64,
+}
+
+impl TournamentSelection {
+    pub fn new(config: &Config) -> Self {
+        TournamentSelection { rate: config.rate }
+    }
 }
 
 impl Selection for TournamentSelection {
@@ -12,18 +19,16 @@ impl Selection for TournamentSelection {
         rng: &mut dyn RngCore,
         population: &Population,
         fitnesses: &[f64],
-        selection_rate: f64,
     ) -> Population {
-        let nb_polygons = population.individuals[0].len();
-        let polygon_size = population.individuals[0].genes[0].len();
-        let num_to_select = (population.len() as f64 * selection_rate).ceil() as usize;
-        let mut selected = Population::empty(num_to_select, nb_polygons, polygon_size);
+        let individual_size = population.individuals[0].len();
+        let selection_size = (population.len() as f64 * self.rate).ceil() as usize;
+        let mut selected = Population::empty(selection_size, individual_size);
 
-        for i in 0..num_to_select {
-            let tournament: Vec<usize> = (0
-                ..(population.len() as f64 * self.tournament_rate).ceil() as usize)
+        for i in 0..selection_size {
+            let tournament: Vec<usize> = (0..selection_size)
                 .map(|_| rng.gen_range(0..population.len()))
                 .collect();
+
             let best = tournament
                 .iter()
                 .max_by(|a, b| fitnesses[**a].partial_cmp(&fitnesses[**b]).unwrap())

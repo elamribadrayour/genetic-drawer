@@ -1,20 +1,27 @@
-use crate::genetic_algorithm::{Crossover, Individual, Population};
+use crate::genetic_algorithm::crossovers::Crossover;
+use crate::genetic_algorithm::population::{Individual, Population};
 
 use rand::{Rng, RngCore};
 
-pub struct UniformCrossover;
+pub struct UniformCrossover {
+    pub rate: f64,
+}
+
+impl UniformCrossover {
+    pub fn new(rate: f64) -> Self {
+        Self { rate }
+    }
+}
 
 impl Crossover for UniformCrossover {
     fn crossover(
         &self,
         rng: &mut dyn RngCore,
         population: &Population,
-        crossover_rate: f64,
         population_size: usize,
     ) -> Population {
-        let nb_polygons = population.individuals[0].len();
-        let polygon_size = population.individuals[0].genes[0].values.len();
-        let mut children = Population::empty(population_size, nb_polygons, polygon_size);
+        let individual_size = population.individuals[0].len();
+        let mut children = Population::empty(population_size, individual_size);
 
         (0..population_size).for_each(|i| {
             let i_1 = rng.gen_range(0..population.len());
@@ -23,11 +30,11 @@ impl Crossover for UniformCrossover {
             let parent_1 = population.get(i_1);
             let parent_2 = population.get(i_2);
 
-            let mut individual_1 = Individual::empty(i, nb_polygons, polygon_size);
-            let mut individual_2 = Individual::empty(i + 1, nb_polygons, polygon_size);
+            let mut individual_1 = Individual::empty(i, individual_size);
+            let mut individual_2 = Individual::empty(i + 1, individual_size);
 
-            (0..nb_polygons).for_each(|j| {
-                if rng.gen_bool(crossover_rate) {
+            (0..individual_size).for_each(|j| {
+                if rng.gen_bool(self.rate) {
                     individual_1.set(j, parent_1.get(j));
                     individual_2.set(j, parent_2.get(j));
                 } else {

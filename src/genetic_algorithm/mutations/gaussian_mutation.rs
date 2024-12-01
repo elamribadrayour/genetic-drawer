@@ -1,35 +1,42 @@
-use crate::genetic_algorithm::{Gene, Individual, Mutation, Population};
+use crate::genetic_algorithm::mutations::{Config, Mutation};
+use crate::genetic_algorithm::population::{Color, Gene, Individual, Population, Shape};
 
 use rand::{Rng, RngCore};
-use rand_distr::Normal;
+use rand_distr::{Distribution, Normal};
 
 pub struct GaussianMutation {
-    pub mu: f64,
-    pub sigma: f64,
+    pub rate: f64,
+    pub distribution: Normal<f64>,
+}
+
+impl GaussianMutation {
+    pub fn new(config: &Config) -> Self {
+        if config.mu.is_none() || config.sigma.is_none() {
+            panic!("Mu and sigma must be provided");
+        }
+        Self {
+            rate: config.rate,
+            distribution: Normal::new(config.mu.unwrap(), config.sigma.unwrap()).unwrap(),
+        }
+    }
 }
 
 impl Mutation for GaussianMutation {
+    fn mutate_shape(&self, rng: &mut dyn RngCore, shape: &mut Shape) {
+        let delta: Vec<f64> = (0..shape.len())
+            .map(|_| self.distribution.sample(rng))
+            .collect();
+        shape.update(&delta);
+    }
+
+    fn mutate_color(&self, rng: &mut dyn RngCore, color: &mut Color) {
+        let delta: Vec<f64> = (0..4).map(|_| self.distribution.sample(rng)).collect();
+        color.update(&delta);
+    }
+
     fn mutate_gene(&self, rng: &mut dyn RngCore, gene: &mut Gene) {
-        // Helper function to generate Gaussian random numbers
-        let gaussian_random = |rng: &mut dyn RngCore, mu: f64, sigma: f64| -> f64 {
-            // Assuming you have a Gaussian distribution generator
-            // Replace with appropriate Gaussian random number generation
-            mu + sigma * rng.sample(Normal::new(0.0, 1.0).unwrap())
-        };
-
-        // Mutate points
-        (0..gene.values.len()).for_each(|j| {
-            let x = gaussian_random(rng, self.mu, self.sigma);
-            let y = gaussian_random(rng, self.mu, self.sigma);
-            gene.set_point((x, y), j);
-        });
-
-        // Mutate colors
-        let r = gaussian_random(rng, self.mu, self.sigma);
-        let g = gaussian_random(rng, self.mu, self.sigma);
-        let b = gaussian_random(rng, self.mu, self.sigma);
-        let a = gaussian_random(rng, self.mu, self.sigma);
-        gene.set_color(&[r, g, b, a]);
+        self.mutate_shape(rng, &mut gene.shape);
+        self.mutate_color(rng, &mut gene.color);
     }
 
     fn mutate_individual(&self, rng: &mut dyn RngCore, individual: &mut Individual) {
@@ -38,16 +45,11 @@ impl Mutation for GaussianMutation {
         });
     }
 
-    fn mutate(
-        &self,
-        rng: &mut dyn RngCore,
-        population: &mut Population,
-        mutation_rate: f64,
-    ) -> usize {
+    fn mutate(&self, rng: &mut dyn RngCore, population: &mut Population) -> usize {
         let mut mutated = 0;
         for i in 0..population.len() {
             let individual = population.get_mut(i);
-            if !rng.gen_bool(mutation_rate) {
+            if !rng.gen_bool(self.rate) {
                 continue;
             }
             self.mutate_individual(rng, individual);

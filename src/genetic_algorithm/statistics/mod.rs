@@ -1,5 +1,5 @@
 mod fitness;
-mod image;
+mod logger;
 
 pub use fitness::Fitness;
-pub use image::Image;
+pub use logger::Logger;

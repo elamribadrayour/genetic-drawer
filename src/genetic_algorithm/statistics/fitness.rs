@@ -48,10 +48,10 @@ impl Fitness {
         (median * 100.0).round() / 100.0
     }
 
-    pub fn get(fitnesses: &[f64]) -> serde_json::Value {
+    pub fn get(fitnesses: &[f64]) -> Value {
         json!({
             "mean": Self::get_mean(fitnesses),
-            "std_dev": Self::get_std_dev(fitnesses),
+            "std-dev": Self::get_std_dev(fitnesses),
             "min": Self::get_min(fitnesses),
             "max": Self::get_max(fitnesses),
             "median": Self::get_median(fitnesses),

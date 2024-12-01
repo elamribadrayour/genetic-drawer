@@ -1,4 +1,4 @@
-use crate::genetic_algorithm::Individual;
+use crate::genetic_algorithm::population::{Config, Individual};
 
 use rand::RngCore;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
@@ -8,23 +8,18 @@ pub struct Population {
 }
 
 impl Population {
-    pub fn new(
-        rng: &mut dyn RngCore,
-        size: usize,
-        nb_polygons: usize,
-        polygon_size: usize,
-    ) -> Self {
+    pub fn new(config: &Config, rng: &mut dyn RngCore) -> Self {
         Self {
-            individuals: (0..size)
-                .map(|i| Individual::new(rng, i, nb_polygons, polygon_size))
+            individuals: (0..config.population_size)
+                .map(|i| Individual::new(rng, i, config.individual_size))
                 .collect(),
         }
     }
 
-    pub fn empty(size: usize, nb_genes: usize, polygon_size: usize) -> Self {
+    pub fn empty(size: usize, individual_size: usize) -> Self {
         Self {
             individuals: (0..size)
-                .map(|i| Individual::empty(i, nb_genes, polygon_size))
+                .map(|i| Individual::empty(i, individual_size))
                 .collect(),
         }
     }

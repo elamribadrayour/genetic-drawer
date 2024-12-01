@@ -1,4 +1,4 @@
-use crate::genetic_algorithm::Fitness;
+use crate::genetic_algorithm::fitnesses::Fitness;
 
 use image::RgbaImage;
 
