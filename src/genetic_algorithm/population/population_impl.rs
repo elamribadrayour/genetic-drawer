@@ -11,7 +11,15 @@ impl Population {
     pub fn new(config: &Config, rng: &mut dyn RngCore) -> Self {
         Self {
             individuals: (0..config.population_size)
-                .map(|i| Individual::new(rng, i, config.individual_size, &config.shapes))
+                .map(|i| {
+                    Individual::new(
+                        rng,
+                        i,
+                        config.individual_size,
+                        &config.shapes,
+                        &config.color_type,
+                    )
+                })
                 .collect(),
         }
     }

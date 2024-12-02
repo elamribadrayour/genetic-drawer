@@ -11,10 +11,11 @@ pub struct Gene {
 }
 
 impl Gene {
-    pub fn new(rng: &mut dyn RngCore, shapes: &[String]) -> Self {
+    pub fn new(rng: &mut dyn RngCore, shapes: &[String], color_type: &Option<String>) -> Self {
+        let color_type = color_type.clone().unwrap_or("rgb".to_string());
         Self {
             shape: Shape::new(rng, shapes),
-            color: Color::new(rng),
+            color: Color::new(rng, color_type),
         }
     }
 

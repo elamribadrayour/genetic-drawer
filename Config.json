@@ -19,7 +19,8 @@
     "population": {
         "shapes": ["square"],
         "population_size": 100,
-        "individual_size": 10
+        "individual_size": 10,
+        "color_type": "grayscale"
     },
     "epochs": 1000,
     "log_path": ".cache/log.jsonl",

@@ -14,11 +14,12 @@ impl Individual {
         id: usize,
         individual_size: usize,
         shapes: &[String],
+        color_type: &Option<String>,
     ) -> Self {
         Self {
             id,
             genes: (0..individual_size)
-                .map(|_| Gene::new(rng, shapes))
+                .map(|_| Gene::new(rng, shapes, color_type))
                 .collect(),
         }
     }
