@@ -3,17 +3,22 @@ use crate::genetic_algorithm::population::{Individual, Population};
 
 use rand::{Rng, RngCore};
 
-pub struct UniformCrossover {
+pub struct Uniform {
     pub rate: f64,
 }
 
-impl UniformCrossover {
-    pub fn new(rate: f64) -> Self {
-        Self { rate }
+impl Uniform {
+    pub fn new(rate: Option<f64>) -> Self {
+        if rate.is_none() {
+            panic!("rate is required for uniform crossover");
+        }
+        Self {
+            rate: rate.unwrap(),
+        }
     }
 }
 
-impl Crossover for UniformCrossover {
+impl Crossover for Uniform {
     fn crossover(
         &self,
         rng: &mut dyn RngCore,

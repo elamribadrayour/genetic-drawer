@@ -1,6 +1,6 @@
 use crate::genetic_algorithm::population::Gene;
 
-use image::RgbaImage;
+use image::RgbImage;
 
 #[derive(Clone)]
 pub struct Individual {
@@ -9,10 +9,17 @@ pub struct Individual {
 }
 
 impl Individual {
-    pub fn new(rng: &mut dyn rand::RngCore, id: usize, individual_size: usize) -> Self {
+    pub fn new(
+        rng: &mut dyn rand::RngCore,
+        id: usize,
+        individual_size: usize,
+        shapes: &[String],
+    ) -> Self {
         Self {
             id,
-            genes: (0..individual_size).map(|_| Gene::new(rng)).collect(),
+            genes: (0..individual_size)
+                .map(|_| Gene::new(rng, shapes))
+                .collect(),
         }
     }
 
@@ -40,14 +47,14 @@ impl Individual {
 
     pub fn draw(&self, dimensions: &(u32, u32)) {
         let (width, height) = dimensions;
-        let mut image = RgbaImage::new(*width, *height);
+        let mut image = RgbImage::new(*width, *height);
         self.genes.iter().for_each(|gene| {
             gene.draw(&mut image);
         });
         image.save(&self.path()).unwrap();
     }
 
-    pub fn read(&self) -> RgbaImage {
-        image::open(self.path()).unwrap().to_rgba8()
+    pub fn read(&self) -> RgbImage {
+        image::open(self.path()).unwrap().to_rgb8()
     }
 }

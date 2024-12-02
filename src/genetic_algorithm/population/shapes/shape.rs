@@ -1,6 +1,6 @@
 use rand::{Rng, RngCore};
 
-use crate::genetic_algorithm::population::shapes::{Circle, Rectangle, Square};
+use crate::genetic_algorithm::population::shapes::{Circle, Rectangle, Square, Triangle};
 
 #[derive(Clone)]
 pub enum Shape {
@@ -8,15 +8,17 @@ pub enum Shape {
     Square(Square),
     Circle(Circle),
     Rectangle(Rectangle),
+    Triangle(Triangle),
 }
 
 impl Shape {
-    pub fn new(rng: &mut dyn RngCore) -> Self {
-        let name = rng.gen_range(0..=2);
-        match name {
-            0 => Shape::Square(Square::new(rng)),
-            1 => Shape::Circle(Circle::new(rng)),
-            2 => Shape::Rectangle(Rectangle::new(rng)),
+    pub fn new(rng: &mut dyn RngCore, shapes: &[String]) -> Self {
+        let name = rng.gen_range(0..shapes.len());
+        match shapes[name].as_str() {
+            "square" => Shape::Square(Square::new(rng)),
+            "circle" => Shape::Circle(Circle::new(rng)),
+            "rectangle" => Shape::Rectangle(Rectangle::new(rng)),
+            "triangle" => Shape::Triangle(Triangle::new(rng)),
             _ => panic!("invalid shape name {}", name),
         }
     }
@@ -26,6 +28,7 @@ impl Shape {
             Shape::Square(square) => square.len(),
             Shape::Circle(circle) => circle.len(),
             Shape::Rectangle(rectangle) => rectangle.len(),
+            Shape::Triangle(triangle) => triangle.len(),
             Shape::Empty => 0,
         }
     }
@@ -39,6 +42,7 @@ impl Shape {
             Shape::Square(square) => square.update(delta),
             Shape::Circle(circle) => circle.update(delta),
             Shape::Rectangle(rectangle) => rectangle.update(delta),
+            Shape::Triangle(triangle) => triangle.update(delta),
             Shape::Empty => (),
         }
     }
@@ -48,6 +52,7 @@ impl Shape {
             Shape::Square(square) => square.points(width, height),
             Shape::Circle(circle) => circle.points(width, height),
             Shape::Rectangle(rectangle) => rectangle.points(width, height),
+            Shape::Triangle(triangle) => triangle.points(width, height),
             Shape::Empty => vec![],
         }
     }

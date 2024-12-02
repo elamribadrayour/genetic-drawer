@@ -1,5 +1,5 @@
-use image::RgbaImage;
+use image::RgbImage;
 
 pub trait Fitness {
-    fn calculate(&self, source: &RgbaImage, result: &RgbaImage) -> f64;
+    fn calculate(&self, source: &RgbImage, result: &RgbImage) -> f64;
 }

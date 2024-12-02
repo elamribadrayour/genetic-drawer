@@ -3,17 +3,17 @@ use crate::genetic_algorithm::selections::{Config, Selection};
 
 use rand::{Rng, RngCore};
 
-pub struct TournamentSelection {
+pub struct Tournament {
     pub rate: f64,
 }
 
-impl TournamentSelection {
+impl Tournament {
     pub fn new(config: &Config) -> Self {
-        TournamentSelection { rate: config.rate }
+        Tournament { rate: config.rate }
     }
 }
 
-impl Selection for TournamentSelection {
+impl Selection for Tournament {
     fn select(
         &self,
         rng: &mut dyn RngCore,

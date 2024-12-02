@@ -5,22 +5,23 @@
     "mutation": {
         "name": "gaussian",
         "mu": 0.0,
-        "sigma": 0.01,
+        "sigma": 0.05,
         "rate": 0.3
     },
     "crossover": {
-        "name": "uniform",
-        "rate": 0.7
+        "name": "n_point",
+        "nb_points": 2
     },
     "selection": {
-        "name": "tournament",
-        "rate": 0.5
+        "name": "elite",
+        "rate": 0.3
     },
     "population": {
-        "population_size": 10,
-        "individual_size": 100
+        "shapes": ["square"],
+        "population_size": 100,
+        "individual_size": 10
     },
-    "epochs": 10000,
+    "epochs": 1000,
     "log_path": ".cache/log.jsonl",
     "image_path": "assets/images/painting.png"
 }

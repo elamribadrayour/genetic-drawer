@@ -4,14 +4,14 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::time::Instant;
 
-use image::RgbaImage;
+use image::RgbImage;
 use rand::{thread_rng, RngCore};
 use rayon::prelude::*;
 
 pub struct GeneticAlgorithm {
     pub epoch: usize,
     pub epochs: usize,
-    pub source: RgbaImage,
+    pub source: RgbImage,
     pub rng: Box<dyn RngCore>,
     pub population: population::Population,
     pub fitness: Box<dyn fitnesses::Fitness>,
@@ -34,7 +34,7 @@ impl GeneticAlgorithm {
         let crossover = crossovers::init(&config.crossover);
         let selection = selections::init(&config.selection);
         let population = population::Population::new(&config.population, &mut rng);
-        let source = image::open(&config.image_path).unwrap().to_rgba8();
+        let source = image::open(&config.image_path).unwrap().to_rgb8();
 
         Ok(GeneticAlgorithm {
             epoch,
@@ -57,14 +57,14 @@ impl GeneticAlgorithm {
         });
     }
 
-    pub fn read(&self) -> Vec<RgbaImage> {
+    pub fn read(&self) -> Vec<RgbImage> {
         self.population
             .par_iter()
             .map(|individual| individual.read())
             .collect()
     }
 
-    pub fn evaluate(&self, images: &[RgbaImage]) -> Vec<f64> {
+    pub fn evaluate(&self, images: &[RgbImage]) -> Vec<f64> {
         images
             .iter()
             .map(|image| self.fitness.calculate(&self.source, image))

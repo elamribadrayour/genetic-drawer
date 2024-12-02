@@ -1,4 +1,4 @@
-use image::RgbaImage;
+use image::RgbImage;
 use imageproc::drawing;
 use rand::RngCore;
 
@@ -11,9 +11,9 @@ pub struct Gene {
 }
 
 impl Gene {
-    pub fn new(rng: &mut dyn RngCore) -> Self {
+    pub fn new(rng: &mut dyn RngCore, shapes: &[String]) -> Self {
         Self {
-            shape: Shape::new(rng),
+            shape: Shape::new(rng, shapes),
             color: Color::new(rng),
         }
     }
@@ -25,8 +25,8 @@ impl Gene {
         }
     }
 
-    pub fn draw(&self, image: &mut RgbaImage) {
-        let color = self.color.rgba();
+    pub fn draw(&self, image: &mut RgbImage) {
+        let color = self.color.rgb();
         let points = self.shape.points(image.width(), image.height());
         if points.first() == points.last() {
             return;
