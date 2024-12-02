@@ -7,6 +7,8 @@ use plotly::{Plot, Scatter};
 use serde_json::json;
 use serde_json::Value;
 
+use image::codecs::gif::GifEncoder;
+
 use crate::genetic_algorithm::config::Config;
 use crate::genetic_algorithm::statistics;
 
@@ -17,20 +19,20 @@ pub struct Logger {
 
 impl Logger {
     pub fn new(config: &Config) -> Self {
+        if std::fs::metadata(".cache").is_ok() {
+            std::fs::remove_dir_all(".cache").unwrap();
+        }
+
+        ["best", "plots", "frames"]
+            .iter()
+            .for_each(|dir| std::fs::create_dir_all(format!(".cache/{}", dir)).unwrap());
+
         let file = File::create(&config.log_path).unwrap();
         let logger = BufWriter::new(file);
         let plots = ["mutated", "fitness"]
             .iter()
             .map(|name| (name.to_string(), Plot::new()))
             .collect();
-
-        if std::fs::metadata(".cache").is_ok() {
-            std::fs::remove_dir_all(".cache").unwrap();
-        }
-
-        std::fs::create_dir_all(".cache/best").unwrap();
-        std::fs::create_dir_all(".cache/plots").unwrap();
-        std::fs::create_dir_all(".cache/frames").unwrap();
 
         Self { logger, plots }
     }
@@ -85,6 +87,36 @@ impl Logger {
             .add_trace(Scatter::new(x, y_mutated));
     }
 
+    pub fn log_gif(&self, epoch: &usize, epochs: &usize) {
+        if *epoch != *epochs - 1 {
+            return;
+        }
+
+        // Collect all PNG files from the ".cache/best" directory
+        let mut paths: Vec<_> = std::fs::read_dir(".cache/best")
+            .unwrap()
+            .filter_map(|entry| entry.ok())
+            .map(|entry| entry.path())
+            .filter(|path| path.extension().and_then(|s| s.to_str()) == Some("png"))
+            .collect();
+        paths.sort();
+
+        let frames: Vec<_> = paths
+            .iter()
+            .map(|path| image::Frame::new(image::open(path).unwrap().into_rgba8()))
+            .collect();
+
+        let file_out = File::create(".cache/result.gif").unwrap();
+        let writer = BufWriter::new(file_out);
+        let mut encoder = GifEncoder::new(writer);
+        encoder
+            .set_repeat(image::codecs::gif::Repeat::Infinite)
+            .unwrap();
+        for frame in frames {
+            encoder.encode_frame(frame).unwrap();
+        }
+    }
+
     pub fn log(
         &mut self,
         epochs: &usize,
@@ -111,6 +143,7 @@ impl Logger {
         self.log_stdout(&log, epoch, epochs);
         self.log_best(&log, epoch, epochs);
         self.log_plot(&log, epoch, epochs);
+        self.log_gif(epoch, epochs);
     }
 
     pub fn flush(&mut self) {

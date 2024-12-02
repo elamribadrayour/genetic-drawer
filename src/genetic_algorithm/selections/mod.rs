@@ -1,9 +1,11 @@
 mod config;
+mod elite;
 mod init;
 mod selection;
-mod tournament_selection;
+mod tournament;
 
 pub use config::Config;
+pub use elite::Elite;
 pub use init::init;
 pub use selection::Selection;
-pub use tournament_selection::TournamentSelection;
+pub use tournament::Tournament;

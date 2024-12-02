@@ -50,11 +50,11 @@ impl Fitness {
 
     pub fn get(fitnesses: &[f64]) -> Value {
         json!({
-            "mean": Self::get_mean(fitnesses),
-            "std-dev": Self::get_std_dev(fitnesses),
             "min": Self::get_min(fitnesses),
             "max": Self::get_max(fitnesses),
+            "mean": Self::get_mean(fitnesses),
             "median": Self::get_median(fitnesses),
+            "std-dev": Self::get_std_dev(fitnesses),
         })
     }
 }

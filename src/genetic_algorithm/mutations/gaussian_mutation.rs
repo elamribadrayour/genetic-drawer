@@ -30,7 +30,7 @@ impl Mutation for GaussianMutation {
     }
 
     fn mutate_color(&self, rng: &mut dyn RngCore, color: &mut Color) {
-        let delta: Vec<f64> = (0..4).map(|_| self.distribution.sample(rng)).collect();
+        let delta: Vec<f64> = (0..3).map(|_| self.distribution.sample(rng)).collect();
         color.update(&delta);
     }
 
