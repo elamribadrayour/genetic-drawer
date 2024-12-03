@@ -5,13 +5,16 @@ use rand::{Rng, RngCore};
 pub struct Circle {
     center: Point,
     radius: f64,
+    max_radius: f64,
 }
 
 impl Circle {
-    pub fn new(rng: &mut dyn RngCore) -> Self {
+    pub fn new(rng: &mut dyn RngCore, max_area: &Option<f64>) -> Self {
+        let max_radius = (max_area.unwrap_or(1.0) / 4.0).sqrt();
         Circle {
             center: Point::new(rng),
-            radius: rng.gen_range(0.0..=1.0),
+            radius: rng.gen_range(0.0..=max_radius),
+            max_radius,
         }
     }
 
@@ -25,6 +28,7 @@ impl Circle {
         }
         self.center.update(&delta[0..2]);
         self.radius += delta[2];
+        self.radius = self.radius.clamp(0.0, self.max_radius);
     }
 
     pub fn points(&self, width: u32, height: u32) -> Vec<imageproc::point::Point<i32>> {

@@ -19,6 +19,8 @@ impl Point {
             panic!("expected data size is 2 --> found {}", delta.len());
         }
         self.x += delta[0];
+        self.x = self.x.clamp(0.0, 1.0);
         self.y += delta[1];
+        self.y = self.y.clamp(0.0, 1.0);
     }
 }

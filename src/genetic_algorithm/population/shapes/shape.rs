@@ -12,13 +12,13 @@ pub enum Shape {
 }
 
 impl Shape {
-    pub fn new(rng: &mut dyn RngCore, shapes: &[String]) -> Self {
+    pub fn new(rng: &mut dyn RngCore, shapes: &[String], max_area: &Option<f64>) -> Self {
         let name = rng.gen_range(0..shapes.len());
         match shapes[name].as_str() {
-            "square" => Shape::Square(Square::new(rng)),
-            "circle" => Shape::Circle(Circle::new(rng)),
-            "rectangle" => Shape::Rectangle(Rectangle::new(rng)),
-            "triangle" => Shape::Triangle(Triangle::new(rng)),
+            "square" => Shape::Square(Square::new(rng, max_area)),
+            "circle" => Shape::Circle(Circle::new(rng, max_area)),
+            "rectangle" => Shape::Rectangle(Rectangle::new(rng, max_area)),
+            "triangle" => Shape::Triangle(Triangle::new(rng, max_area)),
             _ => panic!("invalid shape name {}", name),
         }
     }

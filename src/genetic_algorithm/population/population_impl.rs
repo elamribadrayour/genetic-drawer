@@ -17,6 +17,7 @@ impl Population {
                         i,
                         config.individual_size,
                         &config.shapes,
+                        &config.max_area,
                         &config.color_type,
                     )
                 })

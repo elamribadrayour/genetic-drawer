@@ -7,14 +7,17 @@ pub struct Rectangle {
     center: Point,
     width: f64,
     height: f64,
+    max_side: f64,
 }
 
 impl Rectangle {
-    pub fn new(rng: &mut dyn RngCore) -> Self {
+    pub fn new(rng: &mut dyn RngCore, max_area: &Option<f64>) -> Self {
+        let max_side = (max_area.unwrap_or(1.0) / 2.0).sqrt();
         Rectangle {
             center: Point::new(rng),
             width: rng.gen_range(0.0..=1.0),
-            height: rng.gen_range(0.0..=1.0),
+            height: rng.gen_range(0.0..=max_side),
+            max_side,
         }
     }
 
@@ -28,7 +31,9 @@ impl Rectangle {
         }
         self.center.update(&delta[0..2]);
         self.width += delta[2];
+        self.width = self.width.clamp(0.0, self.max_side);
         self.height += delta[3];
+        self.height = self.height.clamp(0.0, self.max_side);
     }
 
     pub fn points(&self, width: u32, height: u32) -> Vec<imageproc::point::Point<i32>> {

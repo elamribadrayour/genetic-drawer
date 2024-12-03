@@ -20,6 +20,9 @@ impl Fitness for Mse {
 
         let max_error = 255.0 * 255.0 * 3.0;
         let mse = error / (nb_pixels * max_error);
+
+        // Normalize and invert the MSE for fitness calculation.
+        // This ensures that lower MSE values (better matches) result in higher fitness scores.
         1.0 / (1.0 + mse)
     }
 }

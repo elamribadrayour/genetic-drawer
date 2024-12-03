@@ -86,7 +86,7 @@ impl GeneticAlgorithm {
         self.mutation.mutate(&mut *self.rng, &mut self.population)
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self) -> bool {
         let mut durations = HashMap::new();
 
         let time = Instant::now();
@@ -125,13 +125,17 @@ impl GeneticAlgorithm {
             let source_path = format!(".cache/frames/{}.png", index);
             std::fs::copy(source_path, target_path).unwrap();
             self.logger.flush();
-            return;
+            return true;
         }
-
         self.epoch += 1;
+        false
     }
 
     pub fn run(&mut self) {
-        (0..self.epochs).for_each(|_| self.update());
+        for _ in 0..self.epochs {
+            if self.update() {
+                break;
+            }
+        }
     }
 }

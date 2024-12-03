@@ -6,13 +6,16 @@ use rand::{Rng, RngCore};
 pub struct Square {
     center: Point,
     side: f64,
+    max_side: f64,
 }
 
 impl Square {
-    pub fn new(rng: &mut dyn RngCore) -> Self {
+    pub fn new(rng: &mut dyn RngCore, max_area: &Option<f64>) -> Self {
+        let max_side = (max_area.unwrap_or(1.0) / 4.0).sqrt();
         Square {
             center: Point::new(rng),
-            side: rng.gen_range(0.0..=1.0),
+            side: rng.gen_range(0.0..=max_side),
+            max_side,
         }
     }
 
@@ -26,6 +29,7 @@ impl Square {
         }
         self.center.update(&delta[0..2]);
         self.side += delta[2];
+        self.side = self.side.clamp(0.0, self.max_side);
     }
 
     pub fn points(&self, width: u32, height: u32) -> Vec<imageproc::point::Point<i32>> {

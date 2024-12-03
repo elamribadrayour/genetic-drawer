@@ -18,7 +18,11 @@ impl Fitness for Mae {
                 + (pixel[2] as f64 - target_pixel[2] as f64).abs();
         }
 
-        let mae = error / nb_pixels;
+        let max_error = 255.0 * 3.0; // Maximum possible absolute error per pixel
+        let mae = error / (nb_pixels * max_error);
+
+        // Normalize and invert the MAE for fitness calculation.
+        // This ensures that lower MAE values (better matches) result in higher fitness scores.
         1.0 / (1.0 + mae)
     }
 }

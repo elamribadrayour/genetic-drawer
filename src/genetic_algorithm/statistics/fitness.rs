@@ -34,7 +34,6 @@ impl Fitness {
             .enumerate()
             .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
             .unwrap();
-        let fitness = (fitness * 100.0).round() / 100.0;
         json!({
             "index": index,
             "value": fitness,
